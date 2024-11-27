@@ -7,30 +7,32 @@ from collections import deque
 
 pygame.init()
 
-# Screen dimensions
+pygame.mixer.music.load('assets/game_start.wav') 
+pygame.mixer.music.play(-1, 0.0)
+
+eat_sound = pygame.mixer.Sound('assets/munch_1.wav') 
+game_over_sound = pygame.mixer.Sound('assets/death_1.wav') 
+ghost_collision_sound = pygame.mixer.Sound('assets/eat_ghost.wav') 
+
 screen_width = 448
 screen_height = 576
 screen_game = pygame.display.set_mode((screen_width, screen_height))
 pygame.display.set_caption('PAC-MAN')
 
-# Colors
 Black = (0, 0, 0)
 Yellow = (255, 255, 0)
 Blue = (0, 0, 255)
 White = (255, 255, 255)
 Red = (255, 0, 0)
 
-# Pac-Man
 pos = [224, 288]
 speed = 4
 radius = 10
 direction = [0, 0]
 
-# Ghost
 pos_ghost = [224, 224]
 speed_ghost = 2
 
-# Drawing maze
 Maze = [
     "XXXXXXXXXXXXXXXXXXXXXXXXXXXX",
     "X............XX............X",
@@ -46,8 +48,8 @@ Maze = [
     "XXXXXX.XX          XX.XXXXXX",
     "XXXXXX.XX XXX  XXX XX.XXXXXX",
     "XXXXXX.XX X      X XX.XXXXXX",
-    "X         X      X         X",
-    "XXXXXX.XX X      X XX.XXXXXX",
+    "          X      X          ",
+    "XXXXXX.XX X  X   X XX.XXXXXX",
     "XXXXXX.XX XXXXXXXX XX.XXXXXX",
     "XXXXXX.XX          XX.XXXXXX",
     "XXXXXX.XX XXXXXXXX XX.XXXXXX",
@@ -67,6 +69,14 @@ Maze = [
 
 mazedots = [[(col_idx * 16 + 8, row_idx * 16 + 8) for col_idx, col in enumerate(row) if col == '.'] for row_idx, row in enumerate(Maze)]
 
+# Load images for Pacman and Ghost
+pacman_image = pygame.image.load('assets/ean.jpg')  # Replace with your image path
+ghost_image = pygame.image.load('assets/image.png')  # Replace with your image path
+
+# Resize the images to fit the grid size
+pacman_image = pygame.transform.scale(pacman_image, (34, 34))
+ghost_image = pygame.transform.scale(ghost_image, (34, 34))
+
 
 def maze_draw():
     for row_idx, row in enumerate(Maze):
@@ -75,18 +85,15 @@ def maze_draw():
                 x = col_idx * 16
                 y = row_idx * 16
 
-                # Atas
                 if row_idx == 0 or Maze[row_idx - 1][col_idx] != "X":
                     pygame.draw.line(screen_game, Blue, (x, y), (x + 16, y), 2)
-                # Bawah
                 if row_idx == len(Maze) - 1 or Maze[row_idx + 1][col_idx] != "X":
                     pygame.draw.line(screen_game, Blue, (x, y + 16), (x + 16, y + 16), 2)
-                # Kiri
                 if col_idx == 0 or Maze[row_idx][col_idx - 1] != "X":
                     pygame.draw.line(screen_game, Blue, (x, y), (x, y + 16), 2)
-                # Kanan
                 if col_idx == len(row) - 1 or Maze[row_idx][col_idx + 1] != "X":
                     pygame.draw.line(screen_game, Blue, (x + 16, y), (x + 16, y + 16), 2)
+
 
 def dotsdraw():
     for row in mazedots:
@@ -105,33 +112,25 @@ def pacman_movement():
 
 def ghost_movement():
     global pos_ghost
-
-    # Convert positions to grid coordinates
     ghost_row, ghost_col = int(pos_ghost[1] / 16), int(pos_ghost[0] / 16)
     pacman_row, pacman_col = int(pos[1] / 16), int(pos[0] / 16)
 
-    # Directions for moving in the grid: right, left, down, up
     directions = [(0, 1), (0, -1), (1, 0), (-1, 0)]
-
-    # BFS queue: stores tuples of (current position, path to get there)
     queue = deque([(ghost_row, ghost_col, [])])
-    visited = set()  # Keep track of visited positions
+    visited = set() 
 
     while queue:
         current_row, current_col, path = queue.popleft()
 
-        # If we've reached Pac-Man's position, return the first step in the path
         if (current_row, current_col) == (pacman_row, pacman_col):
-            if path:  # Ensure there's a path to follow
+            if path:
                 next_step = path[0]
-                pos_ghost[0] += next_step[1] * speed_ghost  # Update x position
-                pos_ghost[1] += next_step[0] * speed_ghost  # Update y position
+                pos_ghost[0] += next_step[1] * speed_ghost 
+                pos_ghost[1] += next_step[0] * speed_ghost 
             return
 
-        # Mark current position as visited
         visited.add((current_row, current_col))
 
-        # Explore neighbors
         for dr, dc in directions:
             new_row, new_col = current_row + dr, current_col + dc
             if (
@@ -140,11 +139,7 @@ def ghost_movement():
                 Maze[new_row][new_col] != "X" and
                 (new_row, new_col) not in visited
             ):
-                # Add new position to the queue with updated path
                 queue.append((new_row, new_col, path + [(dr, dc)]))
-
-    # If no path is found (e.g., Pac-Man is inaccessible), do nothing
-
 
 
 def check_collision():
@@ -191,7 +186,7 @@ def main():
         food_dots()
 
         if check_collision():
-            print("Game Over")
+            game_over_sound.play()
             pygame.quit()
             sys.exit()
 
@@ -203,8 +198,9 @@ def main():
         screen_game.fill(Black)
         maze_draw()
         dotsdraw()
-        pygame.draw.circle(screen_game, Yellow, (int(pos[0]), int(pos[1])), radius)
-        pygame.draw.circle(screen_game, Red, (int(pos_ghost[0]), int(pos_ghost[1])), radius)
+
+        screen_game.blit(pacman_image, (pos[0] - 8, pos[1] - 8)) 
+        screen_game.blit(ghost_image, (pos_ghost[0] - 8, pos_ghost[1] - 8)) 
         pygame.display.update()
         clock.tick(30)
 
