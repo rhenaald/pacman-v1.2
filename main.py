@@ -69,11 +69,9 @@ Maze = [
 
 mazedots = [[(col_idx * 16 + 8, row_idx * 16 + 8) for col_idx, col in enumerate(row) if col == '.'] for row_idx, row in enumerate(Maze)]
 
-# Load images for Pacman and Ghost
-pacman_image = pygame.image.load('assets/ean.jpg')  # Replace with your image path
-ghost_image = pygame.image.load('assets/image.png')  # Replace with your image path
+pacman_image = pygame.image.load('assets/ean.jpg')
+ghost_image = pygame.image.load('assets/image.png') 
 
-# Resize the images to fit the grid size
 pacman_image = pygame.transform.scale(pacman_image, (34, 34))
 ghost_image = pygame.transform.scale(ghost_image, (34, 34))
 
