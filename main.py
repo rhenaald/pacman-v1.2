@@ -21,6 +21,8 @@ Yellow = (255, 255, 0)
 Blue = (0, 0, 255)
 White = (255, 255, 255)
 Red = (255, 0, 0)
+Green = (0, 255, 0) 
+Purple = (255, 0, 255)
 
 # Variabel yang menandakan apakah permainan sudah dimulai
 game_started = False
@@ -30,7 +32,10 @@ pygame.mixer.music.load("assets/game_start.wav")
 pygame.mixer.music.play(-1)
 
 # Memuat efek suara untuk saat Pac-Man makan titik
-eat_sound = pygame.mixer.Sound("assets/munch_1.wav")
+eat_sound1 = pygame.mixer.Sound("assets/munch_1.wav")
+eat_sound2 = pygame.mixer.Sound("assets/munch_2.wav")
+eat_sounds = [eat_sound1, eat_sound2]
+current_sound_index = 0 
 
 # Memuat gambar Pac-Man dan gambar hantu
 pacman_image = pygame.image.load("assets/pacman.png")  
@@ -73,13 +78,14 @@ power_up_timer = 0
 power_up_duration = 100
 
 # Maze yang berisi tembok ('X'), titik makanan ('.'), dan power-up ('P')
-Maze = [
+# Maze for level 1
+Maze_1 = [
     "XXXXXXXXXXXXXXXXXXXXXXXXXXXX",
     "X............XX............X",
     "X.XXXX.XXXXX.XX.XXXXX.XXXX.X",
-    "XPXXXX.XXXXX.XX.XXXXX.XXXXPX", 
+    "XPXXXX.XXXXX.XX.XXXXX.XXXXPX",
     "X.XXXX.XXXXX.XX.XXXXX.XXXX.X",
-    "X..........................X",  
+    "X..........................X",
     "X.XXXX.XX.XXXXXXXX.XX.XXXX.X",
     "X.XXXX.XX.XXXXXXXX.XX.XXXX.X",
     "X......XX....XX....XX......X",
@@ -100,15 +106,86 @@ Maze = [
     "X...XX................XX...X",
     "XXX.XX.XX.XXXXXXXX.XX.XX.XXX",
     "XXX.XX.XX.XXXXXXXX.XX.XX.XXX",
-    "X.P....XX....XX....XX....P.X", 
+    "X......XX....XX....XX......X",
     "X.XXXXXXXXXX.XX.XXXXXXXXXX.X",
-    "X.XXXXXXXXXX.XX.XXXXXXXXXX.X",
-    "X..........................X",  
+    "XPXXXXXXXXXX.XX.XXXXXXXXXXPX",
+    "X..........................X",
     "XXXXXXXXXXXXXXXXXXXXXXXXXXXX",
 ]
 
-# Membuat list titik makanan yang ada pada maze
-mazedots = [[(col_idx * 16 + 8, row_idx * 16 + 8) for col_idx, col in enumerate(row) if col == '.'] for row_idx, row in enumerate(Maze)]
+# Maze for level 2
+Maze_2 = [
+    "XXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+    "X..........................X",
+    "X.XXXX.XXXXX.XX.XXXXX.XXXX.X",
+    "XPXXXX.XXXXX.XX.XXXXX.XXXXPX",
+    "X.XXXX.XXXXX.XX.XXXXX.XXXX.X",
+    "X..........................X",
+    "X.XXXX.XX.XXXXXXXX.XX.XXXX.X",
+    "X.XXXX.XX.XXXXXXXX.XX.XXXX.X",
+    "X......XX....XX....XX......X",
+    "XXXXXX.XXXXX XX XXXXX.XXXXXX",
+    "XXXXXX.XXXXX XX XXXXX.XXXXXX",
+    "XXXXXX.XX          XX.XXXXXX",
+    "XXXXXX.XX XXX  XXX XX.XXXXXX",
+    "XXXXXX.XX X      X XX.XXXXXX",
+    "          X      X          ",
+    "XXXXXX.XX X  X   X XX.XXXXXX",
+    "XXXXXX.XX XXXXXXXX XX.XXXXXX",
+    "XXXXXX.XX          XX.XXXXXX",
+    "XXXXXX.XX XXXXXXXX XX.XXXXXX",
+    "XXXXXX.XX XXXXXXXX XX.XXXXXX",
+    "X............XX............X",
+    "X.XXXX.XXXXX.XX.XXXXX.XXXX.X",
+    "X.XXXX.XXXXX.XX.XXXXX.XXXX.X",
+    "X...XX................XX...X",
+    "XXX.XX.XX.XXXXXXXX.XX.XX.XXX",
+    "XXX.XX.XX.XXXXXXXX.XX.XX.XXX",
+    "X......XX....XX....XX......X",
+    "X.XXXXXXXXXX.XX.XXXXXXXXXX.X",
+    "X.XXXXXXXXXX.XX.XXXXXXXXXX.X",
+    "X............P.............X",
+    "XXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+]
+
+# Maze for level 3
+Maze_3 = [
+    "XXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+    "X..........................X",
+    "X.XXXX.XXXXX.XX.XXXXX.XXXX.X",
+    "XPXXXX.XXXXX.XX.XXXXX.XXXX.X",
+    "X.XXXX.XXXXX.XX.XXXXX.XXXX.X",
+    "X..........................X",
+    "X.XXXX.XX.XXXXXXXX.XX.XXXX.X",
+    "X.XXXX.XX.XXXXXXXX.XX.XXXX.X",
+    "X......XX....XX....XX......X",
+    "XXXXXX.XXXXX XX XXXXX.XXXXXX",
+    "XXXXXX.XXXXX XX XXXXX.XXXXXX",
+    "XXXXXX.XX          XX.XXXXXX",
+    "XXXXXX.XX XXX  XXX XX.XXXXXX",
+    "XXXXXX.XX X      X XX.XXXXXX",
+    "          X      X          ",
+    "XXXXXX.XX X  X   X XX.XXXXXX",
+    "XXXXXX.XX XXXXXXXX XX.XXXXXX",
+    "XXXXXX.XX          XX.XXXXXX",
+    "XXXXXX.XX XXXXXXXX XX.XXXXXX",
+    "XXXXXX.XX XXXXXXXX XX.XXXXXX",
+    "X............XX............X",
+    "X.XXXX.XXXXX.XX.XXXXX.XXXX.X",
+    "X.XXXX.XXXXX.XX.XXXXX.XXXX.X",
+    "X...XX................XX...X",
+    "XXX.XX.XX.XXXXXXXX.XX.XX.XXX",
+    "XXX.XX.XX.XXXXXXXX.XX.XX.XXX",
+    "X......XX....XX....XX......X",
+    "X.XXXXXXXXXX.XX.XXXXXXXXXX.X",
+    "X.XXXXXXXXXX.XX.XXXXXXXXXXPX",
+    "X..........................X",
+    "XXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+]
+
+mazedots_1 = [[(col_idx * 16 + 8, row_idx * 16 + 8) for col_idx, col in enumerate(row) if col == '.'] for row_idx, row in enumerate(Maze_1)]
+mazedots_2 = [[(col_idx * 16 + 8, row_idx * 16 + 8) for col_idx, col in enumerate(row) if col == '.'] for row_idx, row in enumerate(Maze_2)]
+mazedots_3 = [[(col_idx * 16 + 8, row_idx * 16 + 8) for col_idx, col in enumerate(row) if col == '.'] for row_idx, row in enumerate(Maze_3)]
 
 # Fungsi untuk menggambar Pac-Man di layar
 def draw_pacman():
@@ -123,8 +200,7 @@ def draw_ghosts():
             screen_game.blit(ghost_images[i], (ghost["pos"][0] - 10, ghost["pos"][1] - 10))
 
 # Fungsi untuk mereset posisi hantu setelah Pac-Man kehilangan nyawa
-def reset_ghosts():
-    global ghosts
+def reset_ghosts(count):
     ghosts = [
         {"pos": [224, 224], "speed": 2},
         {"pos": [224, 352], "speed": 2},
@@ -132,30 +208,31 @@ def reset_ghosts():
         {"pos": [352, 352], "speed": 2}
     ]
 
+
+    
 # Fungsi untuk menggambar maze
-def maze_draw():
+def maze_draw(Maze, color):
     for row_idx, row in enumerate(Maze):
         for col_idx, col in enumerate(row):
             if col == "X":
                 x = col_idx * 16
                 y = row_idx * 16
                 if row_idx == 0 or Maze[row_idx - 1][col_idx] != "X":
-                    pygame.draw.line(screen_game, Blue, (x, y), (x + 16, y), 2)
+                    pygame.draw.line(screen_game, color, (x, y), (x + 16, y), 2)
                 if row_idx == len(Maze) - 1 or Maze[row_idx + 1][col_idx] != "X":
-                    pygame.draw.line(screen_game, Blue, (x, y + 16), (x + 16, y + 16), 2)
+                    pygame.draw.line(screen_game, color, (x, y + 16), (x + 16, y + 16), 2)
                 if col_idx == 0 or Maze[row_idx][col_idx - 1] != "X":
-                    pygame.draw.line(screen_game, Blue, (x, y), (x, y + 16), 2)
+                    pygame.draw.line(screen_game, color, (x, y), (x, y + 16), 2)
                 if col_idx == len(row) - 1 or Maze[row_idx][col_idx + 1] != "X":
-                    pygame.draw.line(screen_game, Blue, (x + 16, y), (x + 16, y + 16), 2)
+                    pygame.draw.line(screen_game, color, (x + 16, y), (x + 16, y + 16), 2)
 
-# Fungsi untuk menggambar titik-titik makanan
-def dotsdraw():
+def dotsdraw(mazedots):
     for row in mazedots:
         for mazedot in row:
             pygame.draw.circle(screen_game, White, mazedot, 3)
 
 # Fungsi untuk menggerakkan Pac-Man berdasarkan input pengguna
-def pacman_movement():
+def pacman_movement(Maze):
     global power_up_active, power_up_timer
     nextpos = [pos[0] + direction[0] * speed, pos[1] + direction[1] * speed]
     row = int(nextpos[1] / 16)
@@ -169,7 +246,7 @@ def pacman_movement():
             power_up_timer = power_up_duration
 
 # Fungsi untuk menggerakkan hantu
-def ghost_movement():
+def ghost_movement(Maze):
     for ghost in ghosts:
         pos_ghost = ghost["pos"]
         ghost_row, ghost_col = int(pos_ghost[1] / 16), int(pos_ghost[0] / 16)
@@ -238,7 +315,8 @@ def check_collision():
                 break
 
 # Fungsi untuk mengecek apakah Pac-Man makan titik makanan
-def food_dots():
+def food_dots(mazedots):
+    global current_sound_index
     center = (pos[0], pos[1])
     food_eaten = False  # Flag untuk cek jika ada makanan yang dimakan
     for row in mazedots:
@@ -248,10 +326,13 @@ def food_dots():
         if len(row) < initial_length:  # Cek jika makanan berkurang
             food_eaten = True
     if food_eaten:
-        eat_sound.play()  # Mainkan efek suara saat makanan dimakan
+        # Mainkan suara makan berdasarkan indeks saat ini
+        eat_sounds[current_sound_index].play()
+        # Perbarui indeks untuk memilih suara berikutnya
+        current_sound_index = (current_sound_index + 1) % len(eat_sounds)  # Mainkan efek suara saat makanan dimakan
 
 # Fungsi untuk mengecek apakah pemain telah memenangkan permainan
-def win():
+def win(mazedots):
     return all(not row for row in mazedots)  
 
 # Fungsi untuk menggambar skor dan jumlah nyawa di layar
@@ -263,7 +344,7 @@ def draw_score_and_lives():
     screen_game.blit(lives_text, (screen_width - 100, screen_height - 30))
 
 # Fungsi untuk menggambar power-up di maze
-def powerup_draw():
+def powerup_draw(Maze):
     for row_idx, row in enumerate(Maze):
         for col_idx, col in enumerate(row):
             if col == 'P':  
@@ -272,7 +353,7 @@ def powerup_draw():
                 pygame.draw.circle(screen_game, Red, (x, y), 6)
 
 # Fungsi untuk memunculkan power-up di maze
-def spawn_power_up():
+def spawn_power_up(Maze):
     global power_up_pos
     empty_cells = [] 
     for row_idx, row in enumerate(Maze):
@@ -295,62 +376,82 @@ def show_message(message, color):
 
 # Fungsi utama untuk menjalankan permainan
 def main():
-    global power_up_timer, game_started, power_up_active
+    global pos, game_started, Maze, mazedots, score, lives, power_up_timer, power_up_active
+    level = 1  # Mulai dari level 1
+    Maze = Maze_1  # Atur maze awal
+    mazedots = mazedots_1  # Atur titik makanan awal
+    maze_color = Blue  # Warna maze awal
     clock = pygame.time.Clock()
-    spawn_power_up()
+
+    spawn_power_up(Maze)  # Memunculkan power-up pertama
 
     while True:
+        # Mengambil input dari pemain
         for event in pygame.event.get():
             if event.type == QUIT:
                 pygame.quit()
                 sys.exit()
             elif event.type == KEYDOWN:
                 if event.key == K_LEFT:
-                    direction[0] = -1
-                    direction[1] = 0
+                    direction[0], direction[1] = -1, 0
                 elif event.key == K_RIGHT:
-                    direction[0] = 1
-                    direction[1] = 0
+                    direction[0], direction[1] = 1, 0
                 elif event.key == K_UP:
-                    direction[0] = 0
-                    direction[1] = -1
+                    direction[0], direction[1] = 0, -1
                 elif event.key == K_DOWN:
-                    direction[0] = 0
-                    direction[1] = 1
+                    direction[0], direction[1] = 0, 1
                 if not game_started:
-                    pygame.mixer.music.stop()
+                    pygame.mixer.music.stop()  # Hentikan musik pembuka
                     game_started = True
 
+        # Logika permainan
+        pacman_movement(Maze)  # Gerakan Pac-Man
+        ghost_movement(Maze)  # Gerakan hantu
+        food_dots(mazedots)  # Cek makanan yang dimakan
 
-        pacman_movement()
-        ghost_movement()
-        food_dots()
-
+        # Hitung timer power-up
         if power_up_active:
             power_up_timer -= 1
             if power_up_timer <= 0:
-                power_up_active = False  
+                power_up_active = False  # Nonaktifkan power-up jika waktunya habis
 
+        # Cek tabrakan dan status permainan
         check_collision()
-
-        if win():
-            show_message("You Win!", Yellow)
-            pygame.quit()
-            sys.exit()
+        if win(mazedots):
+            # Perpindahan level
+            if level == 1:
+                print("Level 1 Selesai! Lanjut ke Level 2.")
+                level, Maze, mazedots, maze_color = 2, Maze_2, mazedots_2, Green
+                pos = [224, 288]  # Reset posisi Pac-Man
+                reset_ghosts()  # Reset posisi hantu
+            elif level == 2:
+                print("Level 2 Selesai! Lanjut ke Level 3.")
+                level, Maze, mazedots, maze_color = 3, Maze_3, mazedots_3, Purple
+                pos = [224, 288]
+                reset_ghosts()
+            else:
+                # Pemain menang
+                show_message("You Win!", Yellow)
+                pygame.quit()
+                sys.exit()
 
         if lives == 0:
+            # Game over
             show_message("Game Over", Red)
             pygame.quit()
             sys.exit()
 
-        screen_game.fill(Black)
-        maze_draw()
-        dotsdraw()
-        powerup_draw()
-        draw_pacman() 
-        draw_ghosts()  
-        draw_score_and_lives()
-        pygame.display.update()
-        clock.tick(30)  
+        # Rendering tampilan game
+        screen_game.fill(Black)  # Bersihkan layar
+        maze_draw(Maze, maze_color)  # Gambar maze
+        dotsdraw(mazedots)  # Gambar titik makanan
+        powerup_draw(Maze)  # Gambar power-up
+        draw_pacman()  # Gambar Pac-Man
+        draw_ghosts()  # Gambar hantu
+        draw_score_and_lives()  # Gambar skor dan jumlah nyawa
+
+        pygame.display.update()  # Perbarui layar
+        clock.tick(30)  # Batasi FPS
+  
 if __name__ == '__main__':
     main()
