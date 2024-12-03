@@ -37,6 +37,12 @@ eat_sound2 = pygame.mixer.Sound("assets/munch_2.wav")
 eat_sounds = [eat_sound1, eat_sound2]
 current_sound_index = 0 
 
+death_Sound = pygame.mixer.Sound("assets/death_1.wav")
+Powerup_Sound = pygame.mixer.Sound("assets/power_pellet.wav")
+
+eat_ghost = pygame.mixer.Sound("assets/eat_ghost.wav")
+
+
 # Memuat gambar Pac-Man dan gambar hantu
 pacman_image = pygame.image.load("assets/pacman.png")  
 ghost_images = [
@@ -78,7 +84,6 @@ power_up_timer = 0
 power_up_duration = 100
 
 # Maze yang berisi tembok ('X'), titik makanan ('.'), dan power-up ('P')
-# Maze for level 1
 Maze_1 = [
     "XXXXXXXXXXXXXXXXXXXXXXXXXXXX",
     "X............XX............X",
@@ -94,8 +99,8 @@ Maze_1 = [
     "XXXXXX.XX          XX.XXXXXX",
     "XXXXXX.XX XXX  XXX XX.XXXXXX",
     "XXXXXX.XX X      X XX.XXXXXX",
-    "          X      X          ",
-    "XXXXXX.XX X  X   X XX.XXXXXX",
+    "XXXXXX    X      X    XXXXXX",
+    "XXXXXX.XX X      X XX.XXXXXX",
     "XXXXXX.XX XXXXXXXX XX.XXXXXX",
     "XXXXXX.XX          XX.XXXXXX",
     "XXXXXX.XX XXXXXXXX XX.XXXXXX",
@@ -129,8 +134,8 @@ Maze_2 = [
     "XXXXXX.XX          XX.XXXXXX",
     "XXXXXX.XX XXX  XXX XX.XXXXXX",
     "XXXXXX.XX X      X XX.XXXXXX",
-    "          X      X          ",
-    "XXXXXX.XX X  X   X XX.XXXXXX",
+    "XXXXXX    X      X    XXXXXX",
+    "XXXXXX.XX X      X XX.XXXXXX",
     "XXXXXX.XX XXXXXXXX XX.XXXXXX",
     "XXXXXX.XX          XX.XXXXXX",
     "XXXXXX.XX XXXXXXXX XX.XXXXXX",
@@ -151,7 +156,7 @@ Maze_2 = [
 # Maze for level 3
 Maze_3 = [
     "XXXXXXXXXXXXXXXXXXXXXXXXXXXX",
-    "X..........................X",
+    "X....X................X....X",
     "X.XXXX.XXXXX.XX.XXXXX.XXXX.X",
     "XPXXXX.XXXXX.XX.XXXXX.XXXX.X",
     "X.XXXX.XXXXX.XX.XXXXX.XXXX.X",
@@ -164,8 +169,8 @@ Maze_3 = [
     "XXXXXX.XX          XX.XXXXXX",
     "XXXXXX.XX XXX  XXX XX.XXXXXX",
     "XXXXXX.XX X      X XX.XXXXXX",
-    "          X      X          ",
-    "XXXXXX.XX X  X   X XX.XXXXXX",
+    "XXXXXX    X      X    XXXXXX",
+    "XXXXXX.XX X      X XX.XXXXXX",
     "XXXXXX.XX XXXXXXXX XX.XXXXXX",
     "XXXXXX.XX          XX.XXXXXX",
     "XXXXXX.XX XXXXXXXX XX.XXXXXX",
@@ -200,7 +205,8 @@ def draw_ghosts():
             screen_game.blit(ghost_images[i], (ghost["pos"][0] - 10, ghost["pos"][1] - 10))
 
 # Fungsi untuk mereset posisi hantu setelah Pac-Man kehilangan nyawa
-def reset_ghosts(count):
+def reset_ghosts():
+    global ghosts
     ghosts = [
         {"pos": [224, 224], "speed": 2},
         {"pos": [224, 352], "speed": 2},
@@ -208,8 +214,6 @@ def reset_ghosts(count):
         {"pos": [352, 352], "speed": 2}
     ]
 
-
-    
 # Fungsi untuk menggambar maze
 def maze_draw(Maze, color):
     for row_idx, row in enumerate(Maze):
@@ -243,6 +247,7 @@ def pacman_movement(Maze):
         if Maze[row][col] == 'P':
             Maze[row] = Maze[row][:col] + '.' + Maze[row][col + 1:]
             power_up_active = True
+            Powerup_Sound.play()
             power_up_timer = power_up_duration
 
 # Fungsi untuk menggerakkan hantu
@@ -308,7 +313,9 @@ def check_collision():
             if power_up_active:
                 score += 50  
                 ghost["pos"] = [224, 224]  
+                eat_ghost.play()
             else:
+                death_Sound.play()
                 lives -= 1
                 pos[:] = [224, 288]  
                 reset_ghosts()  
@@ -318,7 +325,7 @@ def check_collision():
 def food_dots(mazedots):
     global current_sound_index
     center = (pos[0], pos[1])
-    food_eaten = False  # Flag untuk cek jika ada makanan yang dimakan
+    food_eaten = False 
     for row in mazedots:
         initial_length = len(row)
          # Menghapus titik makanan yang berada dalam jangkauan Pac-Man
@@ -377,10 +384,10 @@ def show_message(message, color):
 # Fungsi utama untuk menjalankan permainan
 def main():
     global pos, game_started, Maze, mazedots, score, lives, power_up_timer, power_up_active
-    level = 1  # Mulai dari level 1
-    Maze = Maze_1  # Atur maze awal
-    mazedots = mazedots_1  # Atur titik makanan awal
-    maze_color = Blue  # Warna maze awal
+    level = 1 
+    Maze = Maze_1 
+    mazedots = mazedots_1  
+    maze_color = Blue 
     clock = pygame.time.Clock()
 
     spawn_power_up(Maze)  # Memunculkan power-up pertama
@@ -401,19 +408,19 @@ def main():
                 elif event.key == K_DOWN:
                     direction[0], direction[1] = 0, 1
                 if not game_started:
-                    pygame.mixer.music.stop()  # Hentikan musik pembuka
+                    pygame.mixer.music.stop()
                     game_started = True
 
         # Logika permainan
-        pacman_movement(Maze)  # Gerakan Pac-Man
-        ghost_movement(Maze)  # Gerakan hantu
-        food_dots(mazedots)  # Cek makanan yang dimakan
+        pacman_movement(Maze) 
+        ghost_movement(Maze) 
+        food_dots(mazedots)
 
         # Hitung timer power-up
         if power_up_active:
             power_up_timer -= 1
             if power_up_timer <= 0:
-                power_up_active = False  # Nonaktifkan power-up jika waktunya habis
+                power_up_active = False
 
         # Cek tabrakan dan status permainan
         check_collision()
@@ -422,8 +429,8 @@ def main():
             if level == 1:
                 print("Level 1 Selesai! Lanjut ke Level 2.")
                 level, Maze, mazedots, maze_color = 2, Maze_2, mazedots_2, Green
-                pos = [224, 288]  # Reset posisi Pac-Man
-                reset_ghosts()  # Reset posisi hantu
+                pos = [224, 288] 
+                reset_ghosts()  
             elif level == 2:
                 print("Level 2 Selesai! Lanjut ke Level 3.")
                 level, Maze, mazedots, maze_color = 3, Maze_3, mazedots_3, Purple
@@ -442,16 +449,16 @@ def main():
             sys.exit()
 
         # Rendering tampilan game
-        screen_game.fill(Black)  # Bersihkan layar
-        maze_draw(Maze, maze_color)  # Gambar maze
-        dotsdraw(mazedots)  # Gambar titik makanan
-        powerup_draw(Maze)  # Gambar power-up
-        draw_pacman()  # Gambar Pac-Man
-        draw_ghosts()  # Gambar hantu
-        draw_score_and_lives()  # Gambar skor dan jumlah nyawa
+        screen_game.fill(Black)
+        maze_draw(Maze, maze_color)
+        dotsdraw(mazedots)
+        powerup_draw(Maze)
+        draw_pacman()
+        draw_ghosts()
+        draw_score_and_lives()
 
-        pygame.display.update()  # Perbarui layar
-        clock.tick(30)  # Batasi FPS
+        pygame.display.update()
+        clock.tick(30)
   
 if __name__ == '__main__':
     main()
