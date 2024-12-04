@@ -27,11 +27,10 @@ Purple = (255, 0, 255)
 # Variabel yang menandakan apakah permainan sudah dimulai
 game_started = False
 
-# Memainkan musik latar saat permainan dimulai
+# efek suara dalam game
 pygame.mixer.music.load("assets/game_start.wav")  
 pygame.mixer.music.play(-1)
 
-# Memuat efek suara untuk saat Pac-Man makan titik
 eat_sound1 = pygame.mixer.Sound("assets/munch_1.wav")
 eat_sound2 = pygame.mixer.Sound("assets/munch_2.wav")
 eat_sounds = [eat_sound1, eat_sound2]
@@ -39,7 +38,6 @@ current_sound_index = 0
 
 death_Sound = pygame.mixer.Sound("assets/death_1.wav")
 Powerup_Sound = pygame.mixer.Sound("assets/power_pellet.wav")
-
 eat_ghost = pygame.mixer.Sound("assets/eat_ghost.wav")
 
 
@@ -81,7 +79,7 @@ score = 0
 lives = 3
 power_up_active = False
 power_up_timer = 0
-power_up_duration = 100
+power_up_duration = 150
 
 # Maze yang berisi tembok ('X'), titik makanan ('.'), dan power-up ('P')
 Maze_1 = [
@@ -156,10 +154,10 @@ Maze_2 = [
 # Maze for level 3
 Maze_3 = [
     "XXXXXXXXXXXXXXXXXXXXXXXXXXXX",
-    "X....X................X....X",
-    "X.XXXX.XXXXX.XX.XXXXX.XXXX.X",
-    "XPXXXX.XXXXX.XX.XXXXX.XXXX.X",
-    "X.XXXX.XXXXX.XX.XXXXX.XXXX.X",
+    "X...X..................X...X",
+    "X.X.X..XXXXX.XX.XXXXX..X.X.X",
+    "XPX....XXXXX.XX.XXXXX....X.X",
+    "X.XXXXXXXXXX.XX.XXXXXXXXXX.X",
     "X..........................X",
     "X.XXXX.XX.XXXXXXXX.XX.XXXX.X",
     "X.XXXX.XX.XXXXXXXX.XX.XXXX.X",
@@ -192,28 +190,6 @@ mazedots_1 = [[(col_idx * 16 + 8, row_idx * 16 + 8) for col_idx, col in enumerat
 mazedots_2 = [[(col_idx * 16 + 8, row_idx * 16 + 8) for col_idx, col in enumerate(row) if col == '.'] for row_idx, row in enumerate(Maze_2)]
 mazedots_3 = [[(col_idx * 16 + 8, row_idx * 16 + 8) for col_idx, col in enumerate(row) if col == '.'] for row_idx, row in enumerate(Maze_3)]
 
-# Fungsi untuk menggambar Pac-Man di layar
-def draw_pacman():
-    screen_game.blit(pacman_image, (pos[0] - 10, pos[1] - 10))  
-
-# Fungsi untuk menggambar hantu di layar, menyesuaikan dengan status power-up
-def draw_ghosts():
-    for i, ghost in enumerate(ghosts):
-        if power_up_active:  
-            screen_game.blit(blue_ghost_images[i], (ghost["pos"][0] - 10, ghost["pos"][1] - 10))
-        else:  
-            screen_game.blit(ghost_images[i], (ghost["pos"][0] - 10, ghost["pos"][1] - 10))
-
-# Fungsi untuk mereset posisi hantu setelah Pac-Man kehilangan nyawa
-def reset_ghosts():
-    global ghosts
-    ghosts = [
-        {"pos": [224, 224], "speed": 2},
-        {"pos": [224, 352], "speed": 2},
-        {"pos": [352, 224], "speed": 2},
-        {"pos": [352, 352], "speed": 2}
-    ]
-
 # Fungsi untuk menggambar maze
 def maze_draw(Maze, color):
     for row_idx, row in enumerate(Maze):
@@ -235,6 +211,26 @@ def dotsdraw(mazedots):
         for mazedot in row:
             pygame.draw.circle(screen_game, White, mazedot, 3)
 
+facing_direction = 'right'
+
+# Fungsi untuk menggambar Pac-Man di layar
+def draw_pacman():
+    if facing_direction == "UP":
+        rotated_image = pygame.transform.rotate(pacman_image, 90)
+        # screen_game.blit(rotated_image, (pos[0] - 15, pos[1] - 15)) 
+    elif facing_direction == "DOWN":
+        rotated_image = pygame.transform.rotate(pacman_image, 270)
+        # screen_game.blit(rotated_image, (pos[0] - 15, pos[1] - 15)) 
+    elif facing_direction == "LEFT":
+        rotated_image = pygame.transform.flip(pacman_image, True, False)
+        # screen_game.blit(rotated_image, (pos[0] - 15, pos[1] - 15)) 
+    elif facing_direction == "RIGHT":  # "RIGHT"
+        rotated_image = pygame.transform.rotate(pacman_image, 0)
+        # screen_game.blit(rotated_image, (pos[0] - 15, pos[1] - 15)) 
+    else :
+        rotated_image = pacman_image
+    screen_game.blit(rotated_image, (pos[0] - 15, pos[1] - 15)) 
+
 # Fungsi untuk menggerakkan Pac-Man berdasarkan input pengguna
 def pacman_movement(Maze):
     global power_up_active, power_up_timer
@@ -250,6 +246,45 @@ def pacman_movement(Maze):
             Powerup_Sound.play()
             power_up_timer = power_up_duration
 
+# Fungsi untuk mengecek tabrakan antara Pac-Man dan hantu
+def check_collision():
+    global lives, pos, score, power_up_active
+    pacman_rect = pygame.Rect(pos[0] - radius, pos[1] - radius, radius * 2, radius * 2)
+
+    # Mengecek apakah Pac-Man bertabrakan dengan hantu
+    for ghost in ghosts:
+        ghost_rect = pygame.Rect(ghost["pos"][0] - radius, ghost["pos"][1] - radius, radius * 2, radius * 2)
+
+         # Jika ada tabrakan antara Pac-Man dan hantu
+        if pacman_rect.colliderect(ghost_rect):
+            if power_up_active:
+                score += 50  
+                ghost["pos"] = [224, 224]  
+                eat_ghost.play()
+            else:
+                death_Sound.play()
+                lives -= 1
+                pos[:] = [224, 288]  
+                reset_ghosts()  
+                break
+
+# Fungsi untuk menggambar hantu di layar, menyesuaikan dengan status power-up
+def draw_ghosts():
+    for i, ghost in enumerate(ghosts):
+        if power_up_active:  
+            screen_game.blit(blue_ghost_images[i], (ghost["pos"][0] - 10, ghost["pos"][1] - 10))
+        else:  
+            screen_game.blit(ghost_images[i], (ghost["pos"][0] - 10, ghost["pos"][1] - 10))
+
+# Fungsi untuk mereset posisi hantu setelah Pac-Man kehilangan nyawa
+def reset_ghosts():
+    global ghosts
+    ghosts = [
+        {"pos": [224, 224], "speed": 2},
+        {"pos": [224, 352], "speed": 2},
+        {"pos": [352, 224], "speed": 2},
+        {"pos": [352, 352], "speed": 2}
+    ]
 # Fungsi untuk menggerakkan hantu
 def ghost_movement(Maze):
     for ghost in ghosts:
@@ -299,31 +334,9 @@ def ghost_movement(Maze):
                     ):
                         queue.append((new_row, new_col, path + [(dr, dc)]))
 
-# Fungsi untuk mengecek tabrakan antara Pac-Man dan hantu
-def check_collision():
-    global lives, pos, score, power_up_active
-    pacman_rect = pygame.Rect(pos[0] - radius, pos[1] - radius, radius * 2, radius * 2)
-
-    # Mengecek apakah Pac-Man bertabrakan dengan hantu
-    for ghost in ghosts:
-        ghost_rect = pygame.Rect(ghost["pos"][0] - radius, ghost["pos"][1] - radius, radius * 2, radius * 2)
-
-         # Jika ada tabrakan antara Pac-Man dan hantu
-        if pacman_rect.colliderect(ghost_rect):
-            if power_up_active:
-                score += 50  
-                ghost["pos"] = [224, 224]  
-                eat_ghost.play()
-            else:
-                death_Sound.play()
-                lives -= 1
-                pos[:] = [224, 288]  
-                reset_ghosts()  
-                break
-
 # Fungsi untuk mengecek apakah Pac-Man makan titik makanan
 def food_dots(mazedots):
-    global current_sound_index
+    global current_sound_index, score
     center = (pos[0], pos[1])
     food_eaten = False 
     for row in mazedots:
@@ -332,6 +345,7 @@ def food_dots(mazedots):
         row[:] = [mazedot for mazedot in row if not ((center[0] - mazedot[0]) ** 2 + (center[1] - mazedot[1]) ** 2 < (radius + 3) ** 2)]
         if len(row) < initial_length:  # Cek jika makanan berkurang
             food_eaten = True
+            score += 1
     if food_eaten:
         # Mainkan suara makan berdasarkan indeks saat ini
         eat_sounds[current_sound_index].play()
@@ -372,9 +386,9 @@ def spawn_power_up(Maze):
         Maze[power_up_pos[0]] = Maze[power_up_pos[0]][:power_up_pos[1]] + 'P' + Maze[power_up_pos[0]][power_up_pos[1] + 1:]
 
 # Fungsi untuk menampilkan pesan (misalnya, ketika menang atau game over)
-def show_message(message, color):
+def show_message(message, color, size):
     screen_game.fill(Black)
-    font = pygame.font.Font(None, 74)
+    font = pygame.font.Font(None, size)
     text = font.render(message, True, color)
     text_rect = text.get_rect(center=(screen_width // 2, screen_height // 2))
     screen_game.blit(text, text_rect)
@@ -383,10 +397,10 @@ def show_message(message, color):
 
 # Fungsi utama untuk menjalankan permainan
 def main():
-    global pos, game_started, Maze, mazedots, score, lives, power_up_timer, power_up_active
-    level = 1 
-    Maze = Maze_1 
-    mazedots = mazedots_1  
+    global pos, game_started,facing_direction, Maze, mazedots, score, lives, power_up_timer, power_up_active
+    level = 1
+    Maze = Maze_1
+    mazedots = mazedots_1
     maze_color = Blue 
     clock = pygame.time.Clock()
 
@@ -401,12 +415,16 @@ def main():
             elif event.type == KEYDOWN:
                 if event.key == K_LEFT:
                     direction[0], direction[1] = -1, 0
+                    facing_direction = "LEFT"
                 elif event.key == K_RIGHT:
                     direction[0], direction[1] = 1, 0
+                    facing_direction = "RIGHT"
                 elif event.key == K_UP:
                     direction[0], direction[1] = 0, -1
+                    facing_direction = "UP"
                 elif event.key == K_DOWN:
                     direction[0], direction[1] = 0, 1
+                    facing_direction = "DOWN"
                 if not game_started:
                     pygame.mixer.music.stop()
                     game_started = True
@@ -424,27 +442,29 @@ def main():
 
         # Cek tabrakan dan status permainan
         check_collision()
+
         if win(mazedots):
             # Perpindahan level
             if level == 1:
+                show_message("Level 1 Selesai! Lanjut ke Level 2.", Green, 36)
                 print("Level 1 Selesai! Lanjut ke Level 2.")
                 level, Maze, mazedots, maze_color = 2, Maze_2, mazedots_2, Green
                 pos = [224, 288] 
                 reset_ghosts()  
             elif level == 2:
-                print("Level 2 Selesai! Lanjut ke Level 3.")
+                show_message("Level 2 Selesai! Lanjut ke Level 3.", Green, 36)
                 level, Maze, mazedots, maze_color = 3, Maze_3, mazedots_3, Purple
                 pos = [224, 288]
                 reset_ghosts()
             else:
                 # Pemain menang
-                show_message("You Win!", Yellow)
+                show_message("You Win!", Yellow, 74)
                 pygame.quit()
                 sys.exit()
 
         if lives == 0:
             # Game over
-            show_message("Game Over", Red)
+            show_message("Game Over", Red, 74)
             pygame.quit()
             sys.exit()
 
