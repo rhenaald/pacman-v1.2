@@ -186,9 +186,6 @@ Maze_3 = [
     "XXXXXXXXXXXXXXXXXXXXXXXXXXXX",
 ]
 
-mazedots_1 = [[(col_idx * 16 + 8, row_idx * 16 + 8) for col_idx, col in enumerate(row) if col == '.'] for row_idx, row in enumerate(Maze_1)]
-mazedots_2 = [[(col_idx * 16 + 8, row_idx * 16 + 8) for col_idx, col in enumerate(row) if col == '.'] for row_idx, row in enumerate(Maze_2)]
-mazedots_3 = [[(col_idx * 16 + 8, row_idx * 16 + 8) for col_idx, col in enumerate(row) if col == '.'] for row_idx, row in enumerate(Maze_3)]
 
 # Fungsi untuk menggambar maze
 def maze_draw(Maze, color):
@@ -206,6 +203,12 @@ def maze_draw(Maze, color):
                 if col_idx == len(row) - 1 or Maze[row_idx][col_idx + 1] != "X":
                     pygame.draw.line(screen_game, color, (x + 16, y), (x + 16, y + 16), 2)
 
+#definisi maze
+mazedots_1 = [[(col_idx * 16 + 8, row_idx * 16 + 8) for col_idx, col in enumerate(row) if col == '.'] for row_idx, row in enumerate(Maze_1)]
+mazedots_2 = [[(col_idx * 16 + 8, row_idx * 16 + 8) for col_idx, col in enumerate(row) if col == '.'] for row_idx, row in enumerate(Maze_2)]
+mazedots_3 = [[(col_idx * 16 + 8, row_idx * 16 + 8) for col_idx, col in enumerate(row) if col == '.'] for row_idx, row in enumerate(Maze_3)]
+
+#funsi untuk menggambar makanan
 def dotsdraw(mazedots):
     for row in mazedots:
         for mazedot in row:
@@ -217,21 +220,18 @@ facing_direction = 'right'
 def draw_pacman():
     if facing_direction == "UP":
         rotated_image = pygame.transform.rotate(pacman_image, 90)
-        # screen_game.blit(rotated_image, (pos[0] - 15, pos[1] - 15)) 
     elif facing_direction == "DOWN":
         rotated_image = pygame.transform.rotate(pacman_image, 270)
-        # screen_game.blit(rotated_image, (pos[0] - 15, pos[1] - 15)) 
     elif facing_direction == "LEFT":
         rotated_image = pygame.transform.flip(pacman_image, True, False)
-        # screen_game.blit(rotated_image, (pos[0] - 15, pos[1] - 15)) 
-    elif facing_direction == "RIGHT":  # "RIGHT"
+    elif facing_direction == "RIGHT":
         rotated_image = pygame.transform.rotate(pacman_image, 0)
-        # screen_game.blit(rotated_image, (pos[0] - 15, pos[1] - 15)) 
     else :
         rotated_image = pacman_image
     screen_game.blit(rotated_image, (pos[0] - 15, pos[1] - 15)) 
 
 # Fungsi untuk menggerakkan Pac-Man berdasarkan input pengguna
+# kanan 1, kiri -1, atas -1, bawah 1
 def pacman_movement(Maze):
     global power_up_active, power_up_timer
     nextpos = [pos[0] + direction[0] * speed, pos[1] + direction[1] * speed]
@@ -255,7 +255,7 @@ def check_collision():
     for ghost in ghosts:
         ghost_rect = pygame.Rect(ghost["pos"][0] - radius, ghost["pos"][1] - radius, radius * 2, radius * 2)
 
-         # Jika ada tabrakan antara Pac-Man dan hantu
+        # Jika ada tabrakan antara Pac-Man dan hantu
         if pacman_rect.colliderect(ghost_rect):
             if power_up_active:
                 score += 50  
@@ -267,6 +267,24 @@ def check_collision():
                 pos[:] = [224, 288]  
                 reset_ghosts()  
                 break
+
+# Fungsi untuk mengecek apakah Pac-Man makan titik makanan
+def food_dots(mazedots):
+    global current_sound_index, score
+    center = (pos[0], pos[1])
+    food_eaten = False 
+    for row in mazedots:
+        initial_length = len(row)
+         # Menghapus titik makanan yang berada dalam jangkauan Pac-Man
+        row[:] = [mazedot for mazedot in row if not ((center[0] - mazedot[0]) ** 2 + (center[1] - mazedot[1]) ** 2 < (radius + 3) ** 2)]
+        if len(row) < initial_length:
+            food_eaten = True
+            score += 1
+    if food_eaten:
+        # Mainkan suara makan berdasarkan indeks saat ini
+        eat_sounds[current_sound_index].play()
+        # Perbarui indeks untuk memilih suara berikutnya
+        current_sound_index = (current_sound_index + 1) % len(eat_sounds)
 
 # Fungsi untuk menggambar hantu di layar, menyesuaikan dengan status power-up
 def draw_ghosts():
@@ -285,6 +303,7 @@ def reset_ghosts():
         {"pos": [352, 224], "speed": 2},
         {"pos": [352, 352], "speed": 2}
     ]
+    
 # Fungsi untuk menggerakkan hantu
 def ghost_movement(Maze):
     for ghost in ghosts:
@@ -334,23 +353,6 @@ def ghost_movement(Maze):
                     ):
                         queue.append((new_row, new_col, path + [(dr, dc)]))
 
-# Fungsi untuk mengecek apakah Pac-Man makan titik makanan
-def food_dots(mazedots):
-    global current_sound_index, score
-    center = (pos[0], pos[1])
-    food_eaten = False 
-    for row in mazedots:
-        initial_length = len(row)
-         # Menghapus titik makanan yang berada dalam jangkauan Pac-Man
-        row[:] = [mazedot for mazedot in row if not ((center[0] - mazedot[0]) ** 2 + (center[1] - mazedot[1]) ** 2 < (radius + 3) ** 2)]
-        if len(row) < initial_length:  # Cek jika makanan berkurang
-            food_eaten = True
-            score += 1
-    if food_eaten:
-        # Mainkan suara makan berdasarkan indeks saat ini
-        eat_sounds[current_sound_index].play()
-        # Perbarui indeks untuk memilih suara berikutnya
-        current_sound_index = (current_sound_index + 1) % len(eat_sounds)  # Mainkan efek suara saat makanan dimakan
 
 # Fungsi untuk mengecek apakah pemain telah memenangkan permainan
 def win(mazedots):
@@ -374,16 +376,16 @@ def powerup_draw(Maze):
                 pygame.draw.circle(screen_game, Red, (x, y), 6)
 
 # Fungsi untuk memunculkan power-up di maze
-def spawn_power_up(Maze):
-    global power_up_pos
-    empty_cells = [] 
-    for row_idx, row in enumerate(Maze):
-        for col_idx, col in enumerate(row):
-            if col == 'P':  
-                empty_cells.append((row_idx, col_idx))
-    if empty_cells:
-        power_up_pos = random.choice(empty_cells)
-        Maze[power_up_pos[0]] = Maze[power_up_pos[0]][:power_up_pos[1]] + 'P' + Maze[power_up_pos[0]][power_up_pos[1] + 1:]
+# def spawn_power_up(Maze):
+#     global power_up_pos
+#     empty_cells = [] 
+#     for row_idx, row in enumerate(Maze):
+#         for col_idx, col in enumerate(row):
+#             if col == 'P':  
+#                 empty_cells.append((row_idx, col_idx))
+#     if empty_cells:
+#         power_up_pos = random.choice(empty_cells)
+#         Maze[power_up_pos[0]] = Maze[power_up_pos[0]][:power_up_pos[1]] + 'P' + Maze[power_up_pos[0]][power_up_pos[1] + 1:]
 
 # Fungsi untuk menampilkan pesan (misalnya, ketika menang atau game over)
 def show_message(message, color, size):
@@ -403,8 +405,6 @@ def main():
     mazedots = mazedots_1
     maze_color = Blue 
     clock = pygame.time.Clock()
-
-    spawn_power_up(Maze)  # Memunculkan power-up pertama
 
     while True:
         # Mengambil input dari pemain
